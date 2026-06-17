@@ -4,12 +4,13 @@ use wasm_bindgen::JsCast;
 
 use crate::bridge::{Bridge, send};
 use crate::components::editor::ScriptView;
+use crate::driver;
 use crate::state::DemoState;
 
 /// The floating tool window: a step label and progress counter, the
-/// syntax-highlighted script view the timeline types into, and the Run control.
-/// After the tour the editor is the user's to drive. The window sizes itself to
-/// the code it holds.
+/// syntax-highlighted script view the timeline types into, and the Back, Next,
+/// and Run controls. Stepping is manual. After the last step the editor is the
+/// user's to drive. The window sizes itself to the code it holds.
 #[component]
 pub fn Panel(bridge: StoredValue<Option<Bridge>, LocalStorage>, state: DemoState) -> impl IntoView {
     let blur = |event: &web_sys::MouseEvent| {
@@ -35,6 +36,19 @@ pub fn Panel(bridge: StoredValue<Option<Bridge>, LocalStorage>, state: DemoState
             );
         }
     };
+
+    let on_back = move |event: web_sys::MouseEvent| {
+        blur(&event);
+        driver::back(state, bridge);
+    };
+
+    let on_next = move |event: web_sys::MouseEvent| {
+        blur(&event);
+        driver::next(state);
+    };
+
+    let back_disabled = move || state.busy.get() || state.step.get() == 0;
+    let next_disabled = move || state.busy.get() || state.step.get() + 1 >= driver::step_count();
 
     let run_class = move || {
         if state.running.get() {
@@ -70,10 +84,33 @@ pub fn Panel(bridge: StoredValue<Option<Bridge>, LocalStorage>, state: DemoState
                 <div class="editor-bar">
                     <span class="editor-name">"script.rhai"</span>
                     <div class="editor-actions">
-                        <button class=run_class on:click=on_run>
-                            <span class="run-glyph">"\u{25B6}"</span>
-                            "Run"
+                        <label class="autoplay">
+                            <input
+                                type="checkbox"
+                                prop:checked=move || state.autoplay.get()
+                                on:change=move |event| state.autoplay.set(event_target_checked(&event))
+                            />
+                            "Autoplay"
+                        </label>
+                        <button class="nav-button" prop:disabled=back_disabled on:click=on_back>
+                            "Back"
                         </button>
+                        <button class="nav-button" prop:disabled=next_disabled on:click=on_next>
+                            "Next"
+                        </button>
+                        {move || {
+                            state
+                                .interactive
+                                .get()
+                                .then(|| {
+                                    view! {
+                                        <button class=run_class on:click=on_run>
+                                            <span class="run-glyph">"\u{25B6}"</span>
+                                            "Run"
+                                        </button>
+                                    }
+                                })
+                        }}
                     </div>
                 </div>
                 <ScriptView source=state.code editable=state.interactive />

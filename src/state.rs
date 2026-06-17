@@ -9,16 +9,23 @@ pub struct DemoState {
     pub fps: RwSignal<f32>,
     pub entity_count: RwSignal<u32>,
     pub grabbing: RwSignal<bool>,
-    /// Set when the user presses Reset, so the tour timeline stops installing
-    /// further steps instead of rebuilding the scene it just cleared.
-    pub aborted: RwSignal<bool>,
+
+    /// The step currently shown in the panel and reflected in the scene.
+    /// Forward adds the next script; back rebuilds a fresh scene with every
+    /// script up to and including the target.
+    pub step: RwSignal<usize>,
+    /// True while a step is typing or running, so the controls are disabled.
+    pub busy: RwSignal<bool>,
+    /// When set, the tour advances on its own. Unchecking it pauses after the
+    /// current step so the user can step with Back and Next. Defaults to on.
+    pub autoplay: RwSignal<bool>,
 
     /// The script source shown in the editor. The driver writes it character by
-    /// character during the tour; the user edits it afterward.
+    /// character when a step first runs; the user edits it afterward.
     pub code: RwSignal<String>,
     pub step_title: RwSignal<String>,
     pub progress: RwSignal<String>,
-    /// True while the Run button is being "pressed" by the timeline.
+    /// True for a brief flash while a step is being run.
     pub running: RwSignal<bool>,
     /// True once the tour finishes and the editor is the user's to drive.
     pub interactive: RwSignal<bool>,
@@ -34,7 +41,9 @@ impl DemoState {
             fps: RwSignal::new(0.0),
             entity_count: RwSignal::new(0),
             grabbing: RwSignal::new(false),
-            aborted: RwSignal::new(false),
+            step: RwSignal::new(0),
+            busy: RwSignal::new(false),
+            autoplay: RwSignal::new(true),
             code: RwSignal::new(String::new()),
             step_title: RwSignal::new(String::new()),
             progress: RwSignal::new(String::new()),

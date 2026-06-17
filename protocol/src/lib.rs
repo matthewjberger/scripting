@@ -54,6 +54,12 @@ pub enum ClientMessage {
     RunScript {
         source: String,
     },
+    /// Reset to the empty stage, then install and run the given snippets in
+    /// order. Used to jump to a step: a fresh map plus every script up to and
+    /// including it, so going back shows the scene as it was at that step.
+    ApplyScripts {
+        sources: Vec<String>,
+    },
     /// Despawn everything the snippets assembled, leaving the empty stage
     /// (camera, sun, grid, sky) so the scene can be built again.
     ResetScene,

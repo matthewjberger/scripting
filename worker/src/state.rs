@@ -21,6 +21,9 @@ pub struct Scene {
     /// Set by a `ResetScene` message; the next tick performs the reset inside the
     /// frame so the mesh rebuild lands cleanly, the way the editor does it.
     pub reset_requested: bool,
+    /// Set by an `ApplyScripts` message; the next tick resets the scene and
+    /// installs these snippets in order, so navigation can jump to any step.
+    pub pending_apply: Option<Vec<String>>,
 }
 
 impl Scene {
@@ -34,6 +37,7 @@ impl Scene {
             pending_ok: false,
             last_error: None,
             reset_requested: false,
+            pending_apply: None,
         }
     }
 }

@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use crate::state::Scene;
+use nightshade::ecs::script::components::GlobalScript;
 use nightshade::prelude::{Entity, World, despawn_recursive_immediate};
 use nightshade_api::prelude::{clear_draw_pools, run_scripts, script_runtime_reset};
 use protocol::WorkerMessage;
@@ -14,6 +15,21 @@ pub fn tick(scene: &mut Scene, world: &mut World) {
     if scene.reset_requested {
         scene.reset_requested = false;
         reset(scene, world);
+        return;
+    }
+
+    if let Some(sources) = scene.pending_apply.take() {
+        reset(scene, world);
+        let count = sources.len();
+        for (index, source) in sources.into_iter().enumerate() {
+            world.resources.global_scripts.entries.push(GlobalScript {
+                name: format!("step_{}", index + 1),
+                source,
+                enabled: true,
+            });
+        }
+        scene.serial = count;
+        scene.pending_ok = true;
         return;
     }
 

@@ -145,6 +145,9 @@ fn apply_client_message(world: &mut World, scene: &mut Scene, message: ClientMes
                 enabled: true,
             });
         }
+        ClientMessage::ApplyScripts { sources } => {
+            scene.pending_apply = Some(sources);
+        }
         ClientMessage::ResetScene => {
             scene.reset_requested = true;
         }
