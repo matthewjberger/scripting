@@ -17,7 +17,6 @@ pub struct DemoState {
     /// character during the tour; the user edits it afterward.
     pub code: RwSignal<String>,
     pub step_title: RwSignal<String>,
-    pub step_blurb: RwSignal<String>,
     pub progress: RwSignal<String>,
     /// True while the Run button is being "pressed" by the timeline.
     pub running: RwSignal<bool>,
@@ -38,7 +37,6 @@ impl DemoState {
             aborted: RwSignal::new(false),
             code: RwSignal::new(String::new()),
             step_title: RwSignal::new(String::new()),
-            step_blurb: RwSignal::new(String::new()),
             progress: RwSignal::new(String::new()),
             running: RwSignal::new(false),
             interactive: RwSignal::new(false),

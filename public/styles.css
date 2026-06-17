@@ -135,11 +135,6 @@ body {
   font-weight: 600;
 }
 
-.guide-blurb {
-  color: var(--text-dim);
-  line-height: 1.45;
-}
-
 /* ---- editor ---- */
 
 .editor-frame {

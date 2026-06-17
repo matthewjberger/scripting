@@ -6,11 +6,10 @@ use protocol::ClientMessage;
 use crate::bridge::{Bridge, send};
 use crate::state::DemoState;
 
-/// One step of the tour: what the guide says, the rhai snippet typed into the
-/// editor, and how long to watch the scene before moving on.
+/// One step of the tour: a short label, the rhai snippet typed into the editor,
+/// and how long to watch the scene before moving on.
 struct Step {
     title: &'static str,
-    blurb: &'static str,
     code: &'static str,
     settle: f32,
 }
@@ -18,61 +17,51 @@ struct Step {
 const STEPS: &[Step] = &[
     Step {
         title: "Floor",
-        blurb: "spawn_floor, then a prototype texture so it reads as ground.",
         settle: 1.2,
         code: "fn on_start() {\n    commands.spawn_floor(7.0);\n    commands.set_texture(result(0), \"proto_dark\");\n    commands.set_texture_tiling(result(0), 8.0);\n}\n",
     },
     Step {
         title: "Pillars",
-        blurb: "One loop, eight pillars, every one dropping a shadow.",
         settle: 1.5,
         code: "fn on_start() {\n    let n = 8;\n    for i in 0..n {\n        let a = i / n.to_float() * tau;\n        commands.spawn_object(\"Cylinder\",\n            [a.cos() * 4.0, 1.3, a.sin() * 4.0],\n            [0.5, 2.6, 0.5], [1.0, 1.0, 1.0, 1.0], \"Static\");\n        let pillar = commands.last();\n        commands.set_texture(pillar, \"proto_light\");\n        commands.set_texture_tiling(pillar, 3.0);\n    }\n}\n",
     },
     Step {
-        title: "Into the void",
-        blurb: "One call swaps the daylight out for a nebula.",
+        title: "Background",
         settle: 1.6,
         code: "fn on_start() {\n    commands.set_background(\"Nebula\");\n}\n",
     },
     Step {
         title: "Physics",
-        blurb: "Six spheres with mass. Gravity sorts them out.",
         settle: 2.6,
         code: "fn on_start() {\n    for i in 0..6 {\n        commands.spawn_object(\"Sphere\",\n            [random_range(-2.5, 2.5), 7.0 + i, random_range(-2.5, 2.5)],\n            [1.0, 1.0, 1.0], hsv(i / 6.0, 0.7, 1.0),\n            #{ Dynamic: #{ mass: 1.0 } });\n    }\n}\n",
     },
     Step {
         title: "Lights",
-        blurb: "Three point lights, each with a glowing bulb to find it by.",
         settle: 1.6,
         code: "fn on_start() {\n    let lights = [\n        [0.0, 5.0, 0.0, 1.0, 0.85, 0.5],\n        [3.6, 3.0, 3.6, 0.4, 0.6, 1.0],\n        [-3.6, 3.0, -3.6, 1.0, 0.4, 0.6],\n    ];\n    for p in lights {\n        commands.point_light([p[0], p[1], p[2]], [p[3], p[4], p[5]], 45.0);\n        commands.spawn_object(\"Sphere\", [p[0], p[1], p[2]],\n            [0.3, 0.3, 0.3], [p[3], p[4], p[5], 1.0], \"None\");\n        let mark = commands.last();\n        commands.set_emissive(mark, [p[3], p[4], p[5]], 6.0);\n        commands.set_unlit(mark, true);\n    }\n}\n",
     },
     Step {
-        title: "Centerpiece",
-        blurb: "A pedestal and a torus that catches fire once bloom is on.",
+        title: "Torus",
         settle: 1.7,
         code: "fn on_start() {\n    commands.spawn_object(\"Cylinder\", [0.0, 0.5, 0.0],\n        [1.2, 1.0, 1.2], [1.0, 1.0, 1.0, 1.0], \"Static\");\n    let pedestal = commands.last();\n    commands.set_texture(pedestal, \"proto_orange\");\n    commands.set_texture_tiling(pedestal, 2.0);\n    commands.spawn_object(\"Torus\", [0.0, 2.2, 0.0],\n        [1.1, 1.1, 1.1], [1.0, 0.55, 0.2, 1.0], \"None\");\n    commands.set_emissive(commands.last(), [1.0, 0.45, 0.12], 3.0);\n}\n",
     },
     Step {
-        title: "Chrome",
-        blurb: "Mirror spheres orbit and soak up the nebula. That is IBL.",
+        title: "Metallic spheres",
         settle: 3.0,
         code: "fn on_start() {\n    state.motes = [];\n    for i in 0..5 {\n        commands.spawn_object(\"Sphere\", [2.8, 2.6, 0.0],\n            [0.45, 0.45, 0.45], [0.95, 0.96, 1.0, 1.0], \"None\");\n        commands.tag(\"mote\" + i);\n    }\n}\n\nfn on_tick() {\n    let n = 5;\n    if state.motes.len() < n {\n        for i in 0..n {\n            let key = \"mote\" + i;\n            if (key in replies) && (state.motes.len() == i) {\n                state.motes.push(replies[key]);\n                commands.set_metallic_roughness(replies[key], 1.0, 0.08);\n            }\n        }\n    }\n    for i in 0..state.motes.len() {\n        let a = time + i / n.to_float() * tau;\n        let y = 2.6 + (time * 2.0 + i).sin() * 0.5;\n        commands.set_position(state.motes[i],\n            [a.cos() * 2.8, y, a.sin() * 2.8]);\n    }\n}\n",
     },
     Step {
         title: "Helix",
-        blurb: "Grab twelve spheres by handle, screw them into a rising spiral.",
         settle: 3.0,
         code: "fn on_start() {\n    state.helix = [];\n    for i in 0..12 {\n        commands.spawn_object(\"Sphere\", [0.0, 2.0, 0.0],\n            [0.25, 0.25, 0.25], [1.0, 1.0, 1.0, 1.0], \"None\");\n        commands.tag(\"h\" + i);\n    }\n}\n\nfn on_tick() {\n    let n = 12;\n    if state.helix.len() < n {\n        for i in 0..n {\n            let key = \"h\" + i;\n            if (key in replies) && (state.helix.len() == i) {\n                state.helix.push(replies[key]);\n                let c = hsv(i / n.to_float(), 0.85, 1.0);\n                commands.set_emissive(replies[key], [c[0], c[1], c[2]], 4.0);\n            }\n        }\n    }\n    for i in 0..state.helix.len() {\n        let t = i / n.to_float();\n        let a = time * 1.5 + t * tau * 2.0;\n        commands.set_position(state.helix[i],\n            [a.cos() * 1.7, 1.4 + t * 4.0, a.sin() * 1.7]);\n    }\n}\n",
     },
     Step {
-        title: "Canopy",
-        blurb: "Two loops and a sine wave: a ceiling that ripples overhead.",
+        title: "Ripple grid",
         settle: 2.4,
         code: "fn on_tick() {\n    let s = 7;\n    for x in 0..s {\n        for z in 0..s {\n            let fx = x - 3;\n            let fz = z - 3;\n            let d = (fx * fx + fz * fz).to_float().sqrt();\n            let h = 5.5 + (time * 2.5 - d).sin() * 0.6;\n            commands.draw_cube([fx * 1.3, h, fz * 1.3],\n                [0.3, 0.3, 0.3], hsv((d * 0.12 + time * 0.15) % 1.0, 0.7, 1.0));\n        }\n    }\n}\n",
     },
     Step {
         title: "Fireworks",
-        blurb: "Lob a shell on every beat and let it arc and burst itself.",
         settle: 3.5,
         code: "fn on_start() {\n    state.fw = 0.0;\n}\n\nfn on_tick() {\n    state.fw += dt;\n    if state.fw > 0.6 {\n        state.fw = 0.0;\n        commands.emit_firework(\n            [random_range(-3.0, 3.0), 0.5, random_range(-3.0, 3.0)],\n            [random_range(-1.5, 1.5), random_range(8.0, 11.0), random_range(-1.5, 1.5)]);\n    }\n}\n",
     },
@@ -110,13 +99,6 @@ struct Timeline {
 /// sends it to the worker. The scene keeps every script it installs, so each step
 /// layers on more behavior. After the last step the editor goes live.
 pub fn start(state: DemoState, bridge: StoredValue<Option<Bridge>, LocalStorage>) {
-    state
-        .step_title
-        .set("nightshade, building itself".to_string());
-    state
-        .step_blurb
-        .set("It writes the rhai, hits Run, and the scene fills in. Just watch.".to_string());
-
     let timeline = StoredValue::new(Timeline {
         step: 0,
         phase: Phase::Intro,
@@ -136,7 +118,6 @@ pub fn start(state: DemoState, bridge: StoredValue<Option<Bridge>, LocalStorage>
 fn enter_narrate(tl: &mut Timeline, state: DemoState, step_index: usize) {
     let step = &STEPS[step_index];
     state.step_title.set(step.title.to_string());
-    state.step_blurb.set(step.blurb.to_string());
     state
         .progress
         .set(format!("Step {} / {}", step_index + 1, STEPS.len()));
@@ -149,10 +130,7 @@ fn enter_narrate(tl: &mut Timeline, state: DemoState, step_index: usize) {
 
 fn enter_interactive(tl: &mut Timeline, state: DemoState) {
     state.interactive.set(true);
-    state.step_title.set("Your turn".to_string());
-    state
-        .step_blurb
-        .set("That is the last script. The rest keep running. Edit it and hit Run.".to_string());
+    state.step_title.set(String::new());
     state.progress.set(String::new());
     tl.phase = Phase::Done;
 }

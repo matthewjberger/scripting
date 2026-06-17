@@ -6,7 +6,7 @@ use crate::bridge::{Bridge, send};
 use crate::components::editor::ScriptView;
 use crate::state::DemoState;
 
-/// The floating tool window: a guide that narrates the current step, the
+/// The floating tool window: a step label and progress counter, the
 /// syntax-highlighted script view the timeline types into, and the Run control.
 /// After the tour the editor is the user's to drive. The window sizes itself to
 /// the code it holds.
@@ -33,11 +33,6 @@ pub fn Panel(bridge: StoredValue<Option<Bridge>, LocalStorage>, state: DemoState
                     source: state.code.get_untracked(),
                 },
             );
-            state.step_title.set("Running".to_string());
-            state
-                .step_blurb
-                .set("Your script is live. Edit and Run again to rebuild.".to_string());
-            state.progress.set(String::new());
         }
     };
 
@@ -65,8 +60,10 @@ pub fn Panel(bridge: StoredValue<Option<Bridge>, LocalStorage>, state: DemoState
                     (!progress.is_empty())
                         .then(|| view! { <div class="guide-step">{progress}</div> })
                 }}
-                <div class="guide-title">{move || state.step_title.get()}</div>
-                <div class="guide-blurb">{move || state.step_blurb.get()}</div>
+                {move || {
+                    let title = state.step_title.get();
+                    (!title.is_empty()).then(|| view! { <div class="guide-title">{title}</div> })
+                }}
             </div>
 
             <div class="editor-frame">

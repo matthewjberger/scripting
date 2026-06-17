@@ -3,7 +3,7 @@
 //! The engine runs in a web worker on an `OffscreenCanvas`, driven through
 //! `nightshade-api` and its rhai script runtime. This crate is only the page: a
 //! syntax-highlighted script panel that types a snippet, "clicks" Run, and sends
-//! the source to the worker, plus a guide that narrates each step. When the tour
+//! the source to the worker, with a short step label for each. When the tour
 //! ends the panel becomes a live editor.
 //!
 //! - `src/app.rs` composes the components and starts the demo timeline.
